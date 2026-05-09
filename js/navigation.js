@@ -1,4 +1,4 @@
-let _dirtyPages = new Set(['dashboard','kanban','leads-list','funnels-cfg','reports','tarefas','thiago','abordagem','configuracoes','usuarios']);
+let _dirtyPages = new Set(['dashboard','kanban','leads-list','funnels-cfg','etiquetas','reports','tarefas','thiago','abordagem','configuracoes','usuarios']);
 
 /* ── Busca Global ── */
 function onGlobalSearch(val){
@@ -31,6 +31,7 @@ function invalidateLeadPages()      { markPagesDirty('dashboard','kanban','leads
 function invalidateTaskPages()      { markPagesDirty('dashboard','tarefas'); }
 function invalidateMentorshipPages(){ markPagesDirty('dashboard','thiago'); }
 function invalidateFunnelPages()    { markPagesDirty('dashboard','kanban','funnels-cfg','leads-list'); }
+function invalidateTagPages()       { markPagesDirty('etiquetas','leads-list','kanban','reports'); }
 
 /* ── Abas da página Leads ── */
 let leadsTab = 'lista';
@@ -59,7 +60,7 @@ function showPage(p) {
   if(p === 'funnels') p = 'funnels-cfg';
   if(p === 'abordagem'){ showPage('leads-list'); setTimeout(()=>switchLeadsTab('abordagem'),50); return; }
 
-  if(!canAccess(p) && !['funnels-cfg','usuarios'].includes(p)){
+  if(!canAccess(p)){
     toast('⛔ Sem permissão para acessar esta área'); return;
   }
   currentPage = p;
@@ -74,7 +75,7 @@ function showPage(p) {
   // Mapeia página → item de nav ativo
   const navMap = {
     'dashboard':'nav-dashboard','kanban':'nav-kanban','leads-list':'nav-leads',
-    'funnels-cfg':'nav-configuracoes','reports':'nav-reports','tarefas':'nav-tarefas',
+    'funnels-cfg':'nav-configuracoes','etiquetas':'nav-configuracoes','reports':'nav-reports','tarefas':'nav-tarefas',
     'thiago':'nav-mentorias','configuracoes':'nav-configuracoes','usuarios':'nav-configuracoes'
   };
   const nv = document.getElementById(navMap[p]||'');
@@ -87,6 +88,7 @@ function showPage(p) {
     else if(p==='kanban')     renderKanban();
     else if(p==='leads-list') renderLeadsTable();
     else if(p==='funnels-cfg'){ _dirtyPages.add(p); renderFunnels(); }
+    else if(p==='etiquetas')  { _dirtyPages.add(p); renderTags(); }
     else if(p==='reports')    renderReports();
     else if(p==='tarefas')    renderEstagiario();
     else if(p==='thiago')     renderThiago();
@@ -159,10 +161,12 @@ function renderConfiguracoes() {
   const el = document.getElementById('configuracoes-content');
   if(!el) return;
   const hasAdmin = canAccess('usuarios');
+  const hasFunnels = canAccess('funnels-cfg');
+  const hasTags = canAccess('etiquetas');
 
   el.innerHTML = `
     <div class="config-grid">
-      <div class="config-card" onclick="showPage('funnels-cfg')">
+      ${hasFunnels ? `<div class="config-card" onclick="showPage('funnels-cfg')">
         <div class="config-card-icon" style="background:rgba(45,157,143,.1)">🎯</div>
         <div>
           <div class="config-card-title">Funis de Venda</div>
@@ -172,7 +176,19 @@ function renderConfiguracoes() {
           ${funnels.length} funil${funnels.length!==1?'s':''} cadastrado${funnels.length!==1?'s':''}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="margin-left:auto"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
-      </div>
+      </div>` : ''}
+      ${hasTags ? `
+      <div class="config-card" onclick="showPage('etiquetas')">
+        <div class="config-card-icon" style="background:rgba(212,175,55,.1)">🏷️</div>
+        <div>
+          <div class="config-card-title">Etiquetas</div>
+          <div class="config-card-desc">Padronize tags para leads, mentorias, projetos, tarefas e produtos.</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px">
+          ${tagsDbReady ? `${tags.length} etiqueta${tags.length!==1?'s':''}` : `${getAllLeadTags().length} tag${getAllLeadTags().length!==1?'s':''} livre${getAllLeadTags().length!==1?'s':''}`}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="margin-left:auto"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>` : ''}
       ${hasAdmin ? `
       <div class="config-card" onclick="showPage('usuarios')">
         <div class="config-card-icon" style="background:rgba(59,130,246,.1)">👥</div>

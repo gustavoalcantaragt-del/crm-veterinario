@@ -15,7 +15,6 @@ const dbLoadAll = () => Promise.all([
 const dbInsertLead      = data      => sb.from('leads').insert(data).select().single();
 const dbUpdateLead      = (id,data) => sb.from('leads').update(data).eq('id', id);
 const dbDeleteLead      = id        => sb.from('leads').delete().eq('id', id);
-const dbDeleteLeadsByFunnel = fid   => sb.from('leads').delete().eq('funnel_id', fid);
 
 /* ── Funnels ── */
 const dbInsertFunnel = data      => sb.from('funnels').insert(data).select().single();
@@ -26,6 +25,10 @@ const dbDeleteFunnel = id        => sb.from('funnels').delete().eq('id', id);
 const dbInsertTask  = data      => sb.from('tasks').insert(data).select().single();
 const dbUpdateTask  = (id,data) => sb.from('tasks').update(data).eq('id', id);
 const dbDeleteTask  = id        => sb.from('tasks').delete().eq('id', id);
+const dbListTags    = ()        => sb.from('tags').select('*').order('category').order('name');
+const dbInsertTag   = data      => sb.from('tags').insert(data).select().single();
+const dbUpdateTag   = (id,data) => sb.from('tags').update(data).eq('id', id);
+const dbDeleteTag   = id        => sb.from('tags').delete().eq('id', id);
 
 /* ── Mentorships ── */
 const dbInsertMentorship = data      => sb.from('mentorships').insert(data).select().single();

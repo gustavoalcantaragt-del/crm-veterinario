@@ -15,6 +15,7 @@ async function loadAll() {
     tasks       = (t.data||[]).map(mapTask);
     mentorships = (m.data||[]).map(mapMentorship);
     estagiarioObs = s.data?.find(x=>x.key==='estagiario_obs')?.value || '';
+    await loadTagsOptional();
 
     if(funnels.length > 0) activeFunnelId = funnels[0].id;
 
@@ -42,7 +43,17 @@ function mapLead(r){ return {
   activities:r.activities||[], date:r.date||today()
 }; }
 
-function mapTask(r){ return { id:r.id, title:r.title, desc:r.description||'', priority:r.priority||'media', status:r.status||'pendente', deadline:r.deadline||'', createdAt:r.created_at }; }
+function mapTask(r){ return {
+  id:r.id, title:r.title, desc:r.description||'', priority:r.priority||'media', status:r.status||'pendente',
+  deadline:r.deadline||'', entityType:r.entity_type||'', entityId:r.entity_id||'', assigneeId:r.assignee_id||'',
+  checklist:r.checklist||[], comments:r.comments||[], createdAt:r.created_at
+}; }
+
+function mapTag(r){ return {
+  id:r.id, name:r.name, slug:r.slug, color:r.color||'#d4af37', category:r.category||'geral',
+  description:r.description||'', scope:r.scope||['leads'], isActive:r.is_active!==false,
+  isSystem:r.is_system===true, isSensitive:r.is_sensitive===true
+}; }
 
 function mapMentorship(r){ return { id:r.id, client:r.client, type:r.type||'Mentoria Individual', hoursPerSession:r.hours_per_session||1, sessionsPerWeek:r.sessions_per_week||1, totalWeeks:r.total_weeks||4, startDate:r.start_date||'', endDate:r.end_date||'', active:r.active!==false, value:r.value||0, notes:r.notes||'', scheduleType:r.schedule_type||'nenhuma', scheduleDayOfWeek:r.schedule_day_of_week||null, scheduleDayOfMonth:r.schedule_day_of_month||null, scheduleIntervalDays:r.schedule_interval_days||null, scheduleSessions:r.schedule_sessions||[] }; }
 
@@ -57,6 +68,30 @@ function leadToDb(l){ return {
   activities:l.activities||[], date:l.date||today()
 }; }
 
-function taskToDb(t){ return { title:t.title, description:t.desc||null, priority:t.priority, status:t.status, deadline:t.deadline||null }; }
+function taskToDb(t){ return {
+  title:t.title, description:t.desc||null, priority:t.priority, status:t.status, deadline:t.deadline||null,
+  entity_type:t.entityType||null, entity_id:t.entityId||null, assignee_id:t.assigneeId||null,
+  checklist:t.checklist||[], comments:t.comments||[]
+}; }
+
+function taskToDbLegacy(t){ return { title:t.title, description:t.desc||null, priority:t.priority, status:t.status, deadline:t.deadline||null }; }
+
+function tagToDb(t){ return {
+  name:t.name, slug:t.slug, color:t.color, category:t.category, description:t.description||null,
+  scope:t.scope||['leads'], is_active:t.isActive!==false, is_sensitive:t.isSensitive===true
+}; }
 
 function mentorshipToDb(m){ return { client:m.client, type:m.type, hours_per_session:m.hoursPerSession, sessions_per_week:m.sessionsPerWeek, total_weeks:m.totalWeeks, start_date:m.startDate||null, end_date:m.endDate||null, active:m.active, value:m.value||0, notes:m.notes||null, schedule_type:m.scheduleType||'nenhuma', schedule_day_of_week:m.scheduleDayOfWeek||null, schedule_day_of_month:m.scheduleDayOfMonth||null, schedule_interval_days:m.scheduleIntervalDays||null, schedule_sessions:m.scheduleSessions||[] }; }
+
+async function loadTagsOptional(){
+  try{
+    const res = await dbListTags();
+    if(res.error) throw res.error;
+    tags = (res.data||[]).map(mapTag);
+    tagsDbReady = true;
+  } catch(e){
+    tags = [];
+    tagsDbReady = false;
+    console.warn('Tabela tags indisponível; usando etiquetas atuais dos leads até aplicar a migração.', e);
+  }
+}

@@ -25,13 +25,13 @@ function renderKanbanTabs(){
         const n=leads.filter(l=>l.funnelId===f.id).length;
         return `<button class="kb-tab ${f.id===activeFunnelId?'active':''}" onclick="switchFunnel('${f.id}')">
           <span class="kb-tab-dot" style="background:${f.color}"></span>
-          ${f.icon} ${f.name} <span class="kb-tab-n">(${n})</span>
+          ${esc(f.icon)} ${esc(f.name)} <span class="kb-tab-n">(${n})</span>
         </button>`;
       }).join('')}
     </div>
     <div style="position:relative;flex-shrink:0">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;stroke:var(--text3);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="kb-search-input" placeholder="Buscar lead…" value="${kanbanSearch}"
+      <input type="text" id="kb-search-input" placeholder="Buscar lead…" value="${esc(kanbanSearch)}"
         oninput="setKanbanSearch(this.value)"
         style="padding:5px 10px 5px 26px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-family:var(--font);color:var(--text);outline:none;width:160px;transition:.15s"
         onfocus="this.style.borderColor='var(--gold)';this.style.boxShadow='0 0 0 3px rgba(212,175,55,.08)'"
@@ -76,19 +76,20 @@ function renderKanbanBoard(){
         (l.email||'').toLowerCase().includes(q) ||
         (l.instagram||'').toLowerCase().includes(q) ||
         (l.phone||'').includes(q) ||
-        (l.company||'').toLowerCase().includes(q)
+        (l.company||'').toLowerCase().includes(q) ||
+        (l.tags||[]).join(' ').toLowerCase().includes(q)
       );
     }
     const isEmpty = sLeads.length === 0;
     const emptyMsg = q
-      ? `<div style="font-size:11px;color:var(--text3);text-align:center;padding:20px 0;opacity:.6">Nenhum resultado para<br><strong style="color:var(--gold)">"${kanbanSearch}"</strong></div>`
+      ? `<div style="font-size:11px;color:var(--text3);text-align:center;padding:20px 0;opacity:.6">Nenhum resultado para<br><strong style="color:var(--gold)">"${esc(kanbanSearch)}"</strong></div>`
       : `<div style="font-size:11px;color:var(--text3);text-align:center;padding:20px 0;opacity:.5">Sem leads</div>`;
 
     return `<div class="kb-col" id="col-${s.id}" data-stage="${s.id}" ondragover="onDragOver(event,this)" ondrop="onDrop(event,this)" ondragleave="onDragLeave(this)">
       <div class="kb-col-hd">
         <div class="kb-col-info">
           <div class="kb-col-dot" style="background:${s.color}"></div>
-          <span class="kb-col-name">${s.name}</span>
+          <span class="kb-col-name">${esc(s.name)}</span>
         </div>
         <span class="kb-col-badge" style="${q&&sLeads.length>0?'background:rgba(212,175,55,.15);color:var(--gold)':''}">${sLeads.length}${q?'/'+leads.filter(l=>l.funnelId===f.id&&l.stageId===s.id).length:''}</span>
       </div>
@@ -108,7 +109,7 @@ function renderKanbanBoard(){
 
 function renderKbCard(l, s, q=''){
   const o = ORIGIN_MAP[l.origin]||{l:l.origin,c:'#888',bg:'rgba(128,128,128,.1)',icon:''};
-  const tags = (l.tags||[]).slice(0,2).map(t=>`<span class="kb-tag" style="background:rgba(212,175,55,.1);color:var(--gold)">${t}</span>`).join('');
+  const tags = (l.tags||[]).slice(0,2).map(t=>`<span class="kb-tag" style="background:rgba(212,175,55,.1);color:var(--gold)">${esc(t)}</span>`).join('');
   const todayStr = today();
   const fuAlert = l.followUp && !l.converted ? (l.followUp<todayStr?'🚨':l.followUp===todayStr?'⏰':'') : '';
   const displayName = highlightText(l.name, q);
@@ -134,7 +135,7 @@ function renderKbCard(l, s, q=''){
     ${tags?`<div class="kb-card-meta">${tags}</div>`:''}
     <div class="kb-card-footer">
       <div style="display:flex;align-items:center;gap:4px">
-        <span class="origin-badge" style="background:${o.bg};color:${o.c};padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">${o.icon||''} ${o.l}</span>
+        <span class="origin-badge" style="background:${o.bg};color:${o.c};padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">${esc(o.icon||'')} ${esc(o.l)}</span>
         ${l.isVet?`<span style="background:rgba(59,130,246,.1);color:#3b82f6;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700">🩺</span>`:
           `<span style="background:rgba(239,68,68,.08);color:var(--red);padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700">✗vet</span>`}
         ${l.converted?`<span style="background:rgba(34,197,94,.1);color:#22c55e;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700">✅</span>`:''}

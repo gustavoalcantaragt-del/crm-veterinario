@@ -20,6 +20,47 @@ function miniKpi(lbl, val, color, bg){
 
 let tarefasTab = 'tarefas';
 
+function taskEntityLabel(t){
+  if(!t?.entityType || !t?.entityId) return '';
+  if(t.entityType === 'lead'){
+    const l = getLead(t.entityId);
+    return l ? `Lead: ${l.name}` : 'Lead vinculado';
+  }
+  if(t.entityType === 'mentorship'){
+    const m = mentorships.find(x=>x.id===t.entityId);
+    return m ? `Mentoria: ${m.client}` : 'Mentoria vinculada';
+  }
+  return 'Vinculada';
+}
+
+function openTaskEntity(t){
+  if(t.entityType === 'lead' && t.entityId) openDetail(t.entityId);
+  if(t.entityType === 'mentorship' && t.entityId){ showPage('thiago'); mentoriasTab = 'mentorados'; }
+}
+
+function taskSchemaError(error){
+  const msg = (error?.message||'').toLowerCase();
+  return msg.includes('entity_type') || msg.includes('entity_id') || msg.includes('assignee_id') || msg.includes('checklist') || msg.includes('comments');
+}
+
+async function persistTaskInsert(data){
+  const full = await dbInsertTask(taskToDb(data));
+  if(!full.error) return full;
+  if(!taskSchemaError(full.error)) return full;
+  const legacy = await dbInsertTask(taskToDbLegacy(data));
+  if(!legacy.error) toast('Tarefa salva sem vínculo. Aplique a migração da Fase 1 para persistir vínculos.');
+  return legacy;
+}
+
+async function persistTaskUpdate(id, data){
+  const full = await dbUpdateTask(id, taskToDb(data));
+  if(!full.error) return full;
+  if(!taskSchemaError(full.error)) return full;
+  const legacy = await dbUpdateTask(id, taskToDbLegacy(data));
+  if(!legacy.error) toast('Tarefa atualizada sem vínculo persistido. Aplique a migração da Fase 1.');
+  return legacy;
+}
+
 function renderEstagiario(){
   const el = document.getElementById('estagiario-content');
   if(!el) return;
@@ -75,6 +116,7 @@ function renderEstagiario(){
             tasks.filter(t=>t.priority===pri).map(t=>{
               const p = PRIORITY_MAP[t.priority];
               const isOverdue = t.deadline && t.deadline<todayStr && t.status!=='concluida';
+              const entity = taskEntityLabel(t);
               return `<div style="padding:12px 16px;border-bottom:1px solid var(--border)">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
                   <div style="flex:1;min-width:0">
@@ -83,6 +125,7 @@ function renderEstagiario(){
                       <span style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;background:${p.bg};color:${p.c}">${p.dot} ${p.l}</span>
                     </div>
                     ${t.desc?`<div style="font-size:11.5px;color:var(--text3);margin-bottom:4px;line-height:1.5">${esc(t.desc)}</div>`:''}
+                    ${entity?`<button onclick="openTaskEntity(tasks.find(x=>x.id==='${t.id}'))" style="margin:4px 0;background:${t.entityType==='lead'?'rgba(59,130,246,.1)':'rgba(212,175,55,.1)'};color:${t.entityType==='lead'?'#3b82f6':'var(--gold)'};border:1px solid ${t.entityType==='lead'?'rgba(59,130,246,.2)':'rgba(212,175,55,.22)'};border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font)">${esc(entity)}</button>`:''}
                     ${t.deadline?`<div style="font-size:10px;font-family:var(--mono);color:${isOverdue?'var(--red)':'var(--text3)'}">${isOverdue?'🚨 Atrasado — ':'📅 '}${fmtDate(t.deadline)}</div>`:''}
                   </div>
                   <div style="display:flex;gap:4px;flex-shrink:0">
@@ -141,34 +184,61 @@ function switchTarefasTab(tab){
 }
 
 /* ── Task CRUD ── */
-function openTaskModal(id){
+function openTaskModal(id, preset={}){
   editingTaskId = id||null;
   const t = id ? tasks.find(x=>x.id===id) : null;
+  const presetLead = preset.entityType === 'lead' ? getLead(preset.entityId) : null;
   document.getElementById('mt-title').textContent = t ? 'Editar Tarefa' : 'Nova Tarefa';
-  document.getElementById('mt-title-inp').value = t?.title||'';
+  document.getElementById('mt-title-inp').value = t?.title || (presetLead ? `Follow-up com ${presetLead.name}` : '');
   document.getElementById('mt-desc').value = t?.desc||'';
   document.getElementById('mt-priority').value = t?.priority||'media';
   document.getElementById('mt-status').value = t?.status||'pendente';
   document.getElementById('mt-deadline').value = t?.deadline||'';
+  document.getElementById('mt-entity-type').value = t?.entityType || preset.entityType || '';
+  populateTaskEntityOptions(t?.entityId || preset.entityId || '');
   openMo('mo-task');
   setTimeout(()=>document.getElementById('mt-title-inp').focus(),150);
+}
+
+function populateTaskEntityOptions(selectedId=''){
+  const type = document.getElementById('mt-entity-type')?.value || '';
+  const select = document.getElementById('mt-entity-id');
+  if(!select) return;
+  if(!type){
+    select.innerHTML = '<option value="">Nenhum</option>';
+    select.disabled = true;
+    return;
+  }
+  select.disabled = false;
+  const rows = type === 'lead'
+    ? leads.map(l=>({id:l.id, label:l.name}))
+    : mentorships.map(m=>({id:m.id, label:m.client}));
+  select.innerHTML = rows.length
+    ? rows.map(r=>`<option value="${r.id}">${esc(r.label)}</option>`).join('')
+    : '<option value="">Nenhum registro disponível</option>';
+  select.value = selectedId && rows.some(r=>r.id===selectedId) ? selectedId : (rows[0]?.id || '');
 }
 
 async function saveTask(){
   const title = document.getElementById('mt-title-inp').value.trim();
   if(!validateForm([[title, 'Informe o título da tarefa']])) return;
   const btn = document.querySelector('#mo-task .btn-gold');
-  const data = { title, desc:document.getElementById('mt-desc').value.trim(), priority:document.getElementById('mt-priority').value, status:document.getElementById('mt-status').value, deadline:document.getElementById('mt-deadline').value||null };
+  const entityType = document.getElementById('mt-entity-type').value;
+  const data = {
+    title, desc:document.getElementById('mt-desc').value.trim(), priority:document.getElementById('mt-priority').value,
+    status:document.getElementById('mt-status').value, deadline:document.getElementById('mt-deadline').value||null,
+    entityType, entityId:entityType ? document.getElementById('mt-entity-id').value : ''
+  };
   const wasEditing = editingTaskId;
   await withLoading(btn, async () => {
     if(wasEditing){
-      const {error} = await dbUpdateTask(wasEditing, taskToDb(data));
+      const {error} = await persistTaskUpdate(wasEditing, data);
       if(error){ showError(error.message); return; }
       Object.assign(tasks.find(x=>x.id===wasEditing), data);
     } else {
-      const {data:row, error} = await dbInsertTask(taskToDb(data));
+      const {data:row, error} = await persistTaskInsert(data);
       if(error){ showError(error.message); return; }
-      tasks.push(mapTask(row));
+      tasks.push({...mapTask(row), entityType:data.entityType, entityId:data.entityId});
     }
     closeMo('mo-task');
     renderSidebar();

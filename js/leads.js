@@ -3,13 +3,32 @@ const LEADS_PAGE_SIZE = 50;
 let leadsTablePage = 1;
 const _debouncedLeadsBody = debounce(() => renderLeadsTableBody(), 280);
 
+function normalizeLeadTags(raw){
+  const seen = new Set();
+  return raw
+    .split(',')
+    .map(t=>stripTags(t.trim()).toLowerCase())
+    .filter(t=>{
+      if(!t || seen.has(t)) return false;
+      seen.add(t);
+      return true;
+    });
+}
+
+function getAllLeadTags(){
+  return [...new Set(leads.flatMap(l=>l.tags||[]))]
+    .filter(Boolean)
+    .sort((a,b)=>a.localeCompare(b, 'pt-BR'));
+}
+
 function renderLeadsTable(){
   const toolbar = document.getElementById('leads-toolbar');
-  const hasAdvFilter = leadsFilters.origin||leadsFilters.status||leadsFilters.followup||leadsFilters.vet;
+  const hasAdvFilter = leadsFilters.origin||leadsFilters.status||leadsFilters.followup||leadsFilters.vet||leadsFilters.tag;
+  const allTags = getAllLeadTags();
   const todayStr = today();
   toolbar.innerHTML = `
     <button class="filter-btn ${tableFilter==='all'?'active':''}" onclick="setTableFilter('all')">Todos (${leads.length})</button>
-    ${funnels.map(f=>`<button class="filter-btn ${tableFilter===f.id?'active':''}" onclick="setTableFilter('${f.id}')">${f.icon} ${f.name}</button>`).join('')}
+    ${funnels.map(f=>`<button class="filter-btn ${tableFilter===f.id?'active':''}" onclick="setTableFilter('${f.id}')">${esc(f.icon)} ${esc(f.name)}</button>`).join('')}
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <div style="position:relative">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:12px;height:12px;stroke:var(--text3);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -55,7 +74,14 @@ function renderLeadsTable(){
               <option value="nvet" ${leadsFilters.vet==='nvet'?'selected':''}>⚠️ Não veterinários</option>
             </select>
           </div>
-          <button onclick="leadsFilters={origin:'',status:'',followup:'',vet:''};leadsTablePage=1;renderLeadsTable()" class="btn btn-sm" style="width:100%;justify-content:center">Limpar filtros</button>
+          <div class="field" style="margin-bottom:12px">
+            <label style="font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);margin-bottom:4px;display:block">Etiqueta</label>
+            <select onchange="leadsFilters.tag=this.value;leadsTablePage=1;renderLeadsTableBody()" style="font-size:12px;padding:6px 10px">
+              <option value="">Todas</option>
+              ${allTags.map(t=>`<option value="${esc(t)}" ${leadsFilters.tag===t?'selected':''}>${esc(t)}</option>`).join('')}
+            </select>
+          </div>
+          <button onclick="leadsFilters={origin:'',status:'',followup:'',vet:'',tag:''};leadsTablePage=1;renderLeadsTable()" class="btn btn-sm" style="width:100%;justify-content:center">Limpar filtros</button>
         </div>
       </div>
     </div>
@@ -92,7 +118,8 @@ function renderLeadsTableBody(){
       (l.email||'').toLowerCase().includes(q)||
       (l.company||'').toLowerCase().includes(q)||
       (l.instagram||'').toLowerCase().includes(q)||
-      (l.phone||'').toLowerCase().includes(q)
+      (l.phone||'').toLowerCase().includes(q)||
+      (l.tags||[]).join(' ').toLowerCase().includes(q)
     );
   }
   // Filtros avançados
@@ -105,6 +132,7 @@ function renderLeadsTableBody(){
   if(leadsFilters.followup==='none')    filtered = filtered.filter(l=>!l.followUp);
   if(leadsFilters.vet==='vet')  filtered = filtered.filter(l=>l.isVet);
   if(leadsFilters.vet==='nvet') filtered = filtered.filter(l=>!l.isVet);
+  if(leadsFilters.tag) filtered = filtered.filter(l=>(l.tags||[]).includes(leadsFilters.tag));
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / LEADS_PAGE_SIZE));
   if(leadsTablePage > totalPages) leadsTablePage = totalPages;
@@ -357,7 +385,7 @@ function openMoveModal(){
   movingLeadId=activeLeadId;
   document.getElementById('mm-sub').textContent=l.name;
   const fsel=document.getElementById('mm-funnel');
-  fsel.innerHTML=funnels.map(f=>`<option value="${f.id}">${f.icon} ${f.name}</option>`).join('');
+  fsel.innerHTML=funnels.map(f=>`<option value="${f.id}">${esc(f.icon)} ${esc(f.name)}</option>`).join('');
   fsel.value=l.funnelId;
   populateMoveStage();
   document.getElementById('mm-stage').value=l.stageId;
@@ -366,7 +394,7 @@ function openMoveModal(){
 
 function populateMoveStage(){
   const f=getFunnel(document.getElementById('mm-funnel').value);
-  document.getElementById('mm-stage').innerHTML=f?f.stages.map(s=>`<option value="${s.id}">${s.name}</option>`).join(''):'';
+  document.getElementById('mm-stage').innerHTML=f?f.stages.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join(''):'';
 }
 
 async function moveLead(){
@@ -438,7 +466,7 @@ function openEditLead(){
 
 function populateLeadFunnelSelect(){
   const sel = document.getElementById('ml-funnel');
-  sel.innerHTML = funnels.map(f=>`<option value="${f.id}">${f.icon} ${f.name}</option>`).join('');
+  sel.innerHTML = funnels.map(f=>`<option value="${f.id}">${esc(f.icon)} ${esc(f.name)}</option>`).join('');
   if(activeFunnelId) sel.value = activeFunnelId;
   populateLeadStage();
 }
@@ -446,7 +474,7 @@ function populateLeadFunnelSelect(){
 function populateLeadStage(){
   const fid = document.getElementById('ml-funnel').value;
   const f = getFunnel(fid);
-  document.getElementById('ml-stage').innerHTML = f ? f.stages.map(s=>`<option value="${s.id}">${s.name}</option>`).join('') : '';
+  document.getElementById('ml-stage').innerHTML = f ? f.stages.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('') : '';
 }
 
 function toggleConvertedFields(){
@@ -473,7 +501,7 @@ async function saveLead(){
     origin:document.getElementById('ml-origin').value,
     value:parseFloat(document.getElementById('ml-value').value)||0,
     notes:stripTags(document.getElementById('ml-notes').value.trim()),
-    tags:document.getElementById('ml-tags').value.split(',').map(t=>stripTags(t.trim())).filter(Boolean),
+    tags:normalizeLeadTags(document.getElementById('ml-tags').value),
     isVet:document.getElementById('ml-isvet').value === 'true',
     converted:isConverted,
     convertedDate:isConverted ? document.getElementById('ml-converted-date').value : '',
@@ -502,6 +530,7 @@ async function saveLead(){
     else if(currentPage==='dashboard') renderDashboard();
     if(wasEditing && activeLeadId===wasEditing) renderDetailPanel(wasEditing);
     invalidateLeadPages();
+    invalidateTagPages();
     toast(wasEditing ? 'Lead atualizado!' : 'Lead criado!');
   });
 }

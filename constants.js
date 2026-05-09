@@ -18,9 +18,9 @@ const ORIGIN_MAP = {
 
 /* ── Controle de acesso por role ── */
 const ROLE_PAGES = {
-  admin:      ['dashboard','kanban','leads-list','funnels','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
-  dev:        ['dashboard','kanban','leads-list','funnels','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
-  estagiario: ['dashboard','kanban','leads-list','funnels','reports','tarefas','abordagem','configuracoes'],
+  admin:      ['dashboard','kanban','leads-list','funnels-cfg','etiquetas','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
+  dev:        ['dashboard','kanban','leads-list','funnels-cfg','etiquetas','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
+  estagiario: ['dashboard','kanban','leads-list','funnels-cfg','reports','tarefas','abordagem','configuracoes'],
   marketing:  ['dashboard','leads-list','reports','configuracoes'],
 };
 const ROLE_COLORS = { admin:'#2d9d8f', estagiario:'#a855f7', dev:'#3b82f6', marketing:'#f97316' };

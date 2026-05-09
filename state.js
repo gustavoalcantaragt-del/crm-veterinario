@@ -3,7 +3,9 @@ let funnels       = [];
 let leads         = [];
 let tasks         = [];
 let mentorships   = [];
+let tags          = [];
 let estagiarioObs = '';
+let tagsDbReady   = false;
 
 /* ── IDs de seleção / edição ativos ── */
 let activeFunnelId      = null;
@@ -13,6 +15,7 @@ let movingLeadId        = null;
 let editingFunnelId     = null;
 let editingTaskId       = null;
 let editingMentorshipId = null;
+let editingTagId        = null;
 
 /* ── UI state ── */
 let mfColor     = PALETTE[0]; // cor selecionada no modal de funil
@@ -22,7 +25,7 @@ let tempStages  = [];
 let currentPage = 'dashboard';
 
 /* ── Filtros avançados de Leads ── */
-let leadsFilters = { origin:'', status:'', followup:'', vet:'' };
+let leadsFilters = { origin:'', status:'', followup:'', vet:'', tag:'' };
 
 /* ── Aba ativa de Mentorias ── */
 let mentoriasTab = 'visao-geral';

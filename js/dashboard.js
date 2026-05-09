@@ -49,7 +49,7 @@ function renderDashboard() {
     }
     return lastTouch < sevenAgoStr && !l.followUp;
   });
-  const overdueTasksList = tasks.filter(t => t.dueDate && t.dueDate < todayStr && t.status !== 'done');
+  const overdueTasksList = tasks.filter(t => t.deadline && t.deadline < todayStr && t.status !== 'concluida');
 
   const attentionCount = overdueFollowUps.length + todayFollowUps.length + stuckLeads.length + overdueTasksList.length;
 
@@ -252,7 +252,7 @@ function _renderAttentionSection(overdueFollowUps, todayFollowUps, stuckLeads, o
         <div class="attn-dot" style="background:#f97316"></div>
         <div class="attn-body" onclick="showPage('tarefas')">
           <div class="attn-name" style="color:#f97316">${esc(t.title)}</div>
-          <div class="attn-sub">📋 Tarefa vencida em ${fmtDate(t.dueDate)}</div>
+          <div class="attn-sub">📋 Tarefa vencida em ${fmtDate(t.deadline)}</div>
         </div>
         <div class="attn-actions">
           <button class="btn btn-sm" onclick="showPage('tarefas')" style="padding:3px 8px;font-size:10px">Ver tarefas</button>

@@ -80,6 +80,17 @@ function _mentoriasTabContent(tab) {
 
 /* ── Aba: Visão Geral ── */
 
+function mentorshipHourBank(m){
+  const contracted = (parseFloat(m.hoursPerSession)||0) * (parseInt(m.sessionsPerWeek)||0) * (parseInt(m.totalWeeks)||0);
+  const todayStr = today();
+  const doneSessions = (m.scheduleSessions||[]).filter(d=>d < todayStr).length;
+  const used = doneSessions * (parseFloat(m.hoursPerSession)||0);
+  const remaining = Math.max(contracted - used, 0);
+  const pct = contracted ? Math.min(100, Math.round((used / contracted) * 100)) : 0;
+  const alert = contracted && remaining <= contracted * 0.2;
+  return {contracted, used, remaining, pct, alert, doneSessions};
+}
+
 function _mentoriasVisaoGeral() {
   const active   = mentorships.filter(m => m.active);
   const inactive = mentorships.filter(m => !m.active);
@@ -421,6 +432,7 @@ function _mentoriasNotas() {
 function mentorshipRow(m) {
   const monthHours = (parseFloat(m.hoursPerSession) || 0) * (parseInt(m.sessionsPerWeek) || 0);
   const totalHours = monthHours * (parseInt(m.totalWeeks) || 0);
+  const bank = mentorshipHourBank(m);
   const typeIcon   = m.type.includes('Grupo') ? '👥' : m.type.includes('Consul') ? '💼' : m.type.includes('Inten') ? '⚡' : '👤';
   return `<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px">
     <div style="width:38px;height:38px;border-radius:10px;background:${m.active ? 'rgba(212,175,55,.12)' : 'rgba(128,128,128,.1)'};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${typeIcon}</div>

@@ -18,6 +18,7 @@
   <script src="js/dashboard.js"></script>
   <script src="js/kanban.js"></script>
   <script src="js/leads.js"></script>
+  <script src="js/tags.js"></script>
   <script src="js/funnels.js"></script>
   <script src="js/reports.js"></script>
   <script src="js/tasks.js"></script>
@@ -419,6 +420,27 @@
     <div class="pg-scroll" id="funnels-content"></div>
   </div>
 
+  <!-- ── ETIQUETAS (acessível via Configurações) ── -->
+  <div class="page" id="page-etiquetas">
+    <div class="ph">
+      <div class="ph-left">
+        <button class="btn btn-ghost btn-sm" onclick="showPage('configuracoes')" style="margin-bottom:6px;padding-left:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
+          Configurações
+        </button>
+        <h2>🏷️ Etiquetas</h2>
+        <p>Classifique e segmente leads, mentorias, projetos, tarefas e produtos</p>
+      </div>
+      <div class="ph-right">
+        <button class="btn btn-gold" onclick="openTagModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova Etiqueta
+        </button>
+      </div>
+    </div>
+    <div class="pg-scroll" id="tags-content"></div>
+  </div>
+
   <!-- ── CONFIGURAÇÕES ── -->
   <div class="page" id="page-configuracoes">
     <div class="ph">
@@ -457,6 +479,9 @@
     <button class="btn btn-sm" style="flex:1" onclick="openMoveModal()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
       Mover
+    </button>
+    <button class="btn btn-sm btn-ghost" onclick="if(activeLeadId)openTaskModal(null,{entityType:'lead',entityId:activeLeadId})" style="padding:6px 10px" title="Criar tarefa">
+      📋
     </button>
     <button class="btn btn-sm btn-ghost" onclick="if(activeLeadId)openWAModal(activeLeadId)" style="color:#25d366;padding:6px 10px" title="WhatsApp">
       <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.128.555 4.135 1.527 5.882L0 24l6.356-1.508A11.93 11.93 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.002-1.367l-.36-.214-3.722.882.918-3.616-.236-.373A9.792 9.792 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182c5.43 0 9.818 4.388 9.818 9.818 0 5.43-4.388 9.818-9.818 9.818z"/></svg>
@@ -673,6 +698,16 @@
         </div>
       </div>
       <div class="field"><label>Prazo</label><input type="date" id="mt-deadline"></div>
+      <div class="field-row">
+        <div class="field"><label>Vincular a</label>
+          <select id="mt-entity-type" onchange="populateTaskEntityOptions()">
+            <option value="">Sem vínculo</option>
+            <option value="lead">Lead</option>
+            <option value="mentorship">Mentoria</option>
+          </select>
+        </div>
+        <div class="field"><label>Registro</label><select id="mt-entity-id"></select></div>
+      </div>
     </div>
     <div class="modal-ft">
       <button class="btn" onclick="closeMo('mo-task')">Cancelar</button>

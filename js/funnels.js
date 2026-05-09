@@ -10,9 +10,9 @@ function renderFunnels(){
         <div style="padding:16px 18px;border-bottom:1px solid var(--border);position:relative;overflow:hidden">
           <div style="position:absolute;top:0;left:0;bottom:0;width:3px;background:${f.color}"></div>
           <div style="display:flex;align-items:center;gap:10px;padding-left:10px">
-            <div style="width:38px;height:38px;border-radius:10px;background:${f.color}18;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${f.icon}</div>
+            <div style="width:38px;height:38px;border-radius:10px;background:${f.color}18;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${esc(f.icon)}</div>
             <div style="flex:1">
-              <div style="font-size:15px;font-weight:800">${f.name}</div>
+              <div style="font-size:15px;font-weight:800">${esc(f.name)}</div>
               <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${f.stages.length} etapas · ${fLeads.length} leads</div>
             </div>
             <div style="display:flex;gap:5px">
@@ -28,12 +28,12 @@ function renderFunnels(){
             <div><div style="font-size:16px;font-weight:800;letter-spacing:-.04em;color:var(--gold)">${fmtMoney(val)}</div><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em">Pipeline</div></div>
           </div>
           <div style="display:flex;gap:3px;margin-bottom:10px">
-            ${f.stages.map(s=>`<div title="${s.name}" style="flex:1;height:6px;border-radius:3px;background:${s.color};opacity:.7"></div>`).join('')}
+            ${f.stages.map(s=>`<div title="${esc(s.name)}" style="flex:1;height:6px;border-radius:3px;background:${s.color};opacity:.7"></div>`).join('')}
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:4px">
             ${f.stages.map(s=>{
               const n=leads.filter(l=>l.funnelId===f.id&&l.stageId===s.id).length;
-              return `<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${s.color}18;color:${s.color};font-weight:700">${s.name} (${n})</span>`;
+              return `<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:${s.color}18;color:${s.color};font-weight:700">${esc(s.name)} (${n})</span>`;
             }).join('')}
           </div>
         </div>
@@ -104,23 +104,24 @@ async function saveFunnel(){
 
 async function deleteFunnel(id){
   const f = getFunnel(id);
+  const fLeads = leads.filter(l=>l.funnelId===id);
+  if(fLeads.length){
+    toast(`Mova ou exclua os ${fLeads.length} lead${fLeads.length!==1?'s':''} deste funil antes de removê-lo`);
+    return;
+  }
   showConfirm({
     title: '🗑️ Excluir Funil',
-    msg: `Excluir "${f?.name||'este funil'}" e todos os seus leads? Esta ação não pode ser desfeita.`,
-    confirmText: 'Sim, excluir tudo',
+    msg: `Excluir "${f?.name||'este funil'}"? Esta ação não pode ser desfeita.`,
+    confirmText: 'Sim, excluir',
     danger: true,
     onConfirm: async () => {
-      const {error: leadsErr} = await dbDeleteLeadsByFunnel(id);
-      if(leadsErr){ showError(leadsErr.message); return; }
       const {error} = await dbDeleteFunnel(id);
       if(error){ showError(error.message); return; }
       funnels = funnels.filter(f=>f.id!==id);
-      leads   = leads.filter(l=>l.funnelId!==id);
       if(activeFunnelId===id) activeFunnelId = funnels[0]?.id||null;
       renderSidebar();
       renderFunnels();
       invalidateFunnelPages();
-      invalidateLeadPages();
       toast('Funil excluído');
     }
   });
@@ -154,7 +155,7 @@ function renderStageEditor(cid, stages){
     <div class="stage-item" data-id="${s.id}" draggable="true">
       <span class="stage-drag">⠿</span>
       <input type="color" value="${s.color}">
-      <input type="text" value="${s.name}" placeholder="Nome da etapa">
+      <input type="text" value="${esc(s.name)}" placeholder="Nome da etapa">
       <button onclick="removeStageRow(this,'${cid}')" class="btn btn-sm btn-ghost" style="color:var(--red);flex-shrink:0;padding:4px 7px">✕</button>
     </div>
   `).join('');
@@ -180,7 +181,7 @@ function collectStages(cid){
   return [...document.getElementById(cid).querySelectorAll('.stage-item')].map((el,i)=>({
     id: el.dataset.id||uid(),
     color: el.querySelector('input[type=color]').value,
-    name: el.querySelector('input[type=text]').value.trim()||`Etapa ${i+1}`
+    name: stripTags(el.querySelector('input[type=text]').value.trim())||`Etapa ${i+1}`
   }));
 }
 

@@ -546,7 +546,7 @@ Execute este checklist após cada deploy ou mudança grande.
 ## Funis e Etapas
 - [ ] Criar funil → aparece no kanban e na página de funis
 - [ ] Editar etapas → drag para reordenar, salvar atualiza o kanban
-- [ ] Excluir funil → modal confirma, leads do funil são removidos
+- [ ] Excluir funil → bloqueia se houver leads vinculados e só remove funil vazio
 
 ## Tarefas (Estagiário)
 - [ ] Criar tarefa → aparece na lista com prioridade e prazo
@@ -594,7 +594,7 @@ Execute este checklist após cada deploy ou mudança grande.
 ### Passo 1 — Adicionar função paginada em supabase.js
 
 ```js
-// Adicionar após dbDeleteLeadsByFunnel:
+// Adicionar junto aos helpers de leads:
 const dbFetchLeadsPage = (page, size = 50) =>
   sb.from('leads')
     .select('*', { count: 'exact' })
