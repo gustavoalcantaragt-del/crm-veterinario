@@ -7,6 +7,7 @@ function renderReports(){
     <div class="rp-tabs">
       <button class="rp-tab ${reportsTab==='performance'?'active':''}" onclick="switchReportsTab('performance')">Performance</button>
       <button class="rp-tab ${reportsTab==='captacao'?'active':''}" onclick="switchReportsTab('captacao')">Captação</button>
+      <button class="rp-tab ${reportsTab==='operacao'?'active':''}" onclick="switchReportsTab('operacao')">Operacao</button>
     </div>
     <div id="rp-tab-content"></div>
   `;
@@ -15,7 +16,7 @@ function renderReports(){
 
 function switchReportsTab(tab){
   reportsTab = tab;
-  document.querySelectorAll('.rp-tab').forEach((t,i) => t.classList.toggle('active', (tab==='performance'&&i===0)||(tab==='captacao'&&i===1)));
+  document.querySelectorAll('.rp-tab').forEach((t,i) => t.classList.toggle('active', (tab==='performance'&&i===0)||(tab==='captacao'&&i===1)||(tab==='operacao'&&i===2)));
   renderReportsTabContent();
 }
 
@@ -23,7 +24,8 @@ function renderReportsTabContent(){
   const el = document.getElementById('rp-tab-content');
   if(!el) return;
   if(reportsTab === 'performance') el.innerHTML = renderPerformanceTab();
-  else el.innerHTML = renderCaptacaoTab();
+  else if(reportsTab === 'captacao') el.innerHTML = renderCaptacaoTab();
+  else el.innerHTML = renderOperacaoTab();
 }
 
 /* ── ABA PERFORMANCE ── */
@@ -171,5 +173,122 @@ function renderCaptacaoTab(){
       </div>
     </div>
 
+  `;
+}
+
+function reportKpi(label, value, color, sub=''){
+  return `<div class="card" style="padding:18px 20px">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">${label}</div>
+    <div style="font-size:30px;font-weight:900;letter-spacing:-.04em;color:${color}">${value}</div>
+    ${sub?`<div style="font-size:11px;color:var(--text3);margin-top:4px">${sub}</div>`:''}
+  </div>`;
+}
+
+function renderOperacaoTab(){
+  const todayStr = today();
+  const sevenAgo = new Date(); sevenAgo.setDate(sevenAgo.getDate() - 7);
+  const sevenAgoStr = sevenAgo.toISOString().slice(0, 10);
+  const opLeads = leads.filter(l=>!(l.tags||[]).includes('planilha'));
+  const overdueFollowUps = opLeads.filter(l=>l.followUp && l.followUp < todayStr && !l.converted);
+  const todayFollowUps = opLeads.filter(l=>l.followUp === todayStr && !l.converted);
+  const stuckLeads = opLeads.filter(l=>{
+    if(l.converted) return false;
+    const acts = l.activities || [];
+    const last = acts.length && acts[acts.length-1].time ? acts[acts.length-1].time.slice(0,10) : l.date;
+    return last < sevenAgoStr && !l.followUp;
+  });
+
+  const pendingTasks = tasks.filter(t=>t.status!=='concluida');
+  const overdueTasks = pendingTasks.filter(t=>t.deadline && t.deadline < todayStr);
+  const doneTasks = tasks.filter(t=>t.status==='concluida');
+  const taskDoneRate = tasks.length ? Math.round(doneTasks.length / tasks.length * 100) : 0;
+
+  const activeMentorships = mentorships.filter(m=>m.active);
+  const hourBanks = activeMentorships.map(m => {
+    if(typeof mentorshipHourBank === 'function') return {m, bank: mentorshipHourBank(m)};
+    const contracted = (parseFloat(m.hoursPerSession)||0) * (parseInt(m.sessionsPerWeek)||0) * (parseInt(m.totalWeeks)||0);
+    return {m, bank:{contracted, used:0, remaining:contracted, pct:0, alert:false}};
+  });
+  const usedHours = hourBanks.reduce((s,x)=>s+x.bank.used,0);
+  const remainingHours = hourBanks.reduce((s,x)=>s+x.bank.remaining,0);
+  const lowBalance = hourBanks.filter(x=>x.bank.alert);
+
+  const attentionRows = [
+    ...overdueFollowUps.slice(0,6).map(l=>({type:'Follow-up vencido', title:l.name, sub:fmtDate(l.followUp), color:'var(--red)', action:`openDetail('${l.id}')`})),
+    ...overdueTasks.slice(0,6).map(t=>({type:'Tarefa vencida', title:t.title, sub:fmtDate(t.deadline), color:'#f97316', action:`showPage('tarefas')`})),
+    ...stuckLeads.slice(0,6).map(l=>({type:'Lead parado', title:l.name, sub:'7+ dias sem atividade', color:'#64748b', action:`openDetail('${l.id}')`})),
+    ...lowBalance.slice(0,6).map(x=>({type:'Horas acabando', title:x.m.client, sub:`${x.bank.remaining.toFixed(1)}h restantes`, color:'var(--red)', action:`showPage('thiago')`}))
+  ].slice(0,12);
+
+  return `
+    <div class="stats-grid" style="margin-bottom:20px">
+      ${reportKpi('Follow-ups vencidos', overdueFollowUps.length, overdueFollowUps.length?'var(--red)':'#22c55e', `${todayFollowUps.length} para hoje`)}
+      ${reportKpi('Tarefas vencidas', overdueTasks.length, overdueTasks.length?'var(--red)':'#22c55e', `${pendingTasks.length} pendentes`)}
+      ${reportKpi('Conclusao de tarefas', taskDoneRate + '%', taskDoneRate>=70?'#22c55e':'var(--gold)', `${doneTasks.length}/${tasks.length || 0} concluidas`)}
+      ${reportKpi('Saldo de horas', remainingHours.toFixed(1) + 'h', lowBalance.length?'var(--red)':'#22c55e', `${usedHours.toFixed(1)}h consumidas`)}
+    </div>
+
+    <div class="dash-grid">
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">Gargalos de Operacao</span>
+          <span class="card-sub">${attentionRows.length} itens</span>
+        </div>
+        <div>
+          ${attentionRows.length ? attentionRows.map(r=>`
+            <div onclick="${r.action}" style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;cursor:pointer">
+              <div style="width:9px;height:9px;border-radius:50%;background:${r.color};flex-shrink:0"></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:800;color:${r.color}">${esc(r.type)}</div>
+                <div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.title)}</div>
+              </div>
+              <div style="font-size:11px;color:var(--text3);font-family:var(--mono);flex-shrink:0">${esc(r.sub)}</div>
+            </div>`).join('') : `<div class="empty"><div class="empty-icon">OK</div><p>Nenhum gargalo critico agora</p></div>`}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">Banco de Horas por Mentoria</span>
+          <span class="card-sub">${activeMentorships.length} ativas</span>
+        </div>
+        <div class="card-body">
+          ${hourBanks.length ? hourBanks.map(({m,bank})=>`
+            <div style="padding:9px 0;border-bottom:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:5px">
+                <span style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.client)}</span>
+                <span style="font-size:11px;font-weight:800;color:${bank.alert?'var(--red)':'#22c55e'}">${bank.remaining.toFixed(1)}h</span>
+              </div>
+              <div style="height:7px;border-radius:99px;background:var(--surface3);overflow:hidden">
+                <div style="height:100%;width:${bank.pct}%;background:${bank.alert?'var(--red)':'#22c55e'}"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;color:var(--text3)">
+                <span>${bank.used.toFixed(1)}h usadas</span>
+                <span>${bank.contracted.toFixed(1)}h contratadas</span>
+              </div>
+            </div>`).join('') : `<div class="empty"><div class="empty-icon">--</div><p>Nenhuma mentoria ativa</p></div>`}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-hd"><span class="card-title">Produtividade de Tarefas</span></div>
+      <div class="card-body">
+        ${['pendente','em_andamento','concluida'].map(status=>{
+          const count = tasks.filter(t=>t.status===status).length;
+          const meta = STATUS_MAP?.[status] || {l:status,c:'var(--text3)'};
+          const pct = tasks.length ? Math.round(count / tasks.length * 100) : 0;
+          return `<div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+              <span style="color:var(--text2)">${meta.l}</span>
+              <span style="font-weight:800;color:${meta.c}">${count} · ${pct}%</span>
+            </div>
+            <div style="height:6px;background:var(--surface3);border-radius:99px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${meta.c};border-radius:99px"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
   `;
 }

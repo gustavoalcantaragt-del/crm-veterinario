@@ -383,7 +383,7 @@ function showLoginScreen(){
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('sidebar').style.display = 'none';
   document.getElementById('main').style.display = 'none';
-  const topbar = document.querySelector('.topbar');
+  const topbar = document.getElementById('topbar');
   if(topbar) topbar.style.display = 'none';
   const bottomNav = document.getElementById('bottom-nav');
   if(bottomNav) bottomNav.style.display = 'none';
@@ -393,7 +393,7 @@ function hideLoginScreen(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('sidebar').style.display = '';
   document.getElementById('main').style.display = '';
-  const topbar = document.querySelector('.topbar');
+  const topbar = document.getElementById('topbar');
   if(topbar) topbar.style.display = '';
   const bottomNav = document.getElementById('bottom-nav');
   if(bottomNav) bottomNav.style.display = '';

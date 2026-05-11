@@ -35,7 +35,7 @@ function taskEntityLabel(t){
 
 function openTaskEntity(t){
   if(t.entityType === 'lead' && t.entityId) openDetail(t.entityId);
-  if(t.entityType === 'mentorship' && t.entityId){ showPage('thiago'); mentoriasTab = 'mentorados'; }
+  if(t.entityType === 'mentorship' && t.entityId){ mentoriasTab = 'mentorados'; showPage('thiago'); }
 }
 
 function taskSchemaError(error){
@@ -274,11 +274,4 @@ async function setTaskStatus(id, status){
   if(error) return showError(error.message);
   renderSidebar(); renderEstagiario();
   invalidateTaskPages();
-}
-
-async function saveObs(){
-  estagiarioObs = document.getElementById('est-obs').value;
-  const {error} = await dbUpsertSetting('estagiario_obs', estagiarioObs);
-  if(error) return showError(error.message);
-  toast('Observações salvas!');
 }

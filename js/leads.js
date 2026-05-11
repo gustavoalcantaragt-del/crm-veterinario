@@ -736,9 +736,3 @@ function exportCSV(){
   a.click();
   toast('CSV exportado!');
 }
-
-function onGlobalSearch(q){
-  if(!q.trim()) return;
-  tableSearch = q;
-  showPage('leads-list');
-}

@@ -6,6 +6,16 @@ let mentorships   = [];
 let tags          = [];
 let estagiarioObs = '';
 let tagsDbReady   = false;
+let automationSettings = {
+  followupOverdue:true,
+  noResponse7d:true,
+  highValue:true,
+  highValueMin:5000,
+  overdueLinkedTask:true,
+  cleanResolved:true,
+  lastRunAt:null,
+};
+let automationLastRun = null;
 
 /* ── IDs de seleção / edição ativos ── */
 let activeFunnelId      = null;

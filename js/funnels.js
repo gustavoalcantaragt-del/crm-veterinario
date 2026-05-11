@@ -95,7 +95,7 @@ async function saveFunnel(){
     }
     closeMo('mo-funnel');
     renderSidebar();
-    if(currentPage==='funnels') renderFunnels();
+    if(currentPage==='funnels-cfg') renderFunnels();
     else if(currentPage==='kanban') renderKanban();
     invalidateFunnelPages();
     toast(wasEditing ? 'Funil atualizado!' : 'Funil criado!');

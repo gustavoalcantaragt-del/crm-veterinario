@@ -18,8 +18,8 @@ const ORIGIN_MAP = {
 
 /* ── Controle de acesso por role ── */
 const ROLE_PAGES = {
-  admin:      ['dashboard','kanban','leads-list','funnels-cfg','etiquetas','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
-  dev:        ['dashboard','kanban','leads-list','funnels-cfg','etiquetas','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
+  admin:      ['dashboard','kanban','leads-list','funnels-cfg','etiquetas','automacoes','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
+  dev:        ['dashboard','kanban','leads-list','funnels-cfg','etiquetas','automacoes','reports','tarefas','thiago','abordagem','configuracoes','usuarios'],
   estagiario: ['dashboard','kanban','leads-list','funnels-cfg','reports','tarefas','abordagem','configuracoes'],
   marketing:  ['dashboard','leads-list','reports','configuracoes'],
 };

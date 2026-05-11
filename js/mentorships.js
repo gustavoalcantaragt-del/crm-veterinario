@@ -91,6 +91,34 @@ function mentorshipHourBank(m){
   return {contracted, used, remaining, pct, alert, doneSessions};
 }
 
+function renderHourBankPanel(items){
+  if(!items.length) return '';
+  return `<div class="card">
+    <div class="card-hd">
+      <span class="card-title">Banco de Horas</span>
+      <span class="card-sub">${items.length} ativo${items.length!==1?'s':''}</span>
+    </div>
+    <div>
+      ${items.map(m=>{
+        const bank = mentorshipHourBank(m);
+        return `<div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px">
+            <div style="font-size:13px;font-weight:800">${esc(m.client)}</div>
+            <div style="font-size:11px;font-weight:800;color:${bank.alert?'var(--red)':'#22c55e'}">${bank.remaining.toFixed(1)}h restantes</div>
+          </div>
+          <div style="height:8px;border-radius:99px;background:var(--surface3);overflow:hidden">
+            <div style="height:100%;width:${bank.pct}%;background:${bank.alert?'var(--red)':'#22c55e'}"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:10px;color:var(--text3)">
+            <span>${bank.used.toFixed(1)}h consumidas</span>
+            <span>${bank.contracted.toFixed(1)}h contratadas</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function _mentoriasVisaoGeral() {
   const active   = mentorships.filter(m => m.active);
   const inactive = mentorships.filter(m => !m.active);
@@ -122,6 +150,8 @@ function _mentoriasVisaoGeral() {
           </div>
           <div style="font-size:32px;font-weight:900;color:${loadStatus.c}">${monthlyHours.toFixed(1)}<span style="font-size:14px">h/mês</span></div>
         </div>
+
+        ${renderHourBankPanel(active)}
 
         <div class="card">
           <div class="card-hd">

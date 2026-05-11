@@ -19,11 +19,11 @@
   <script src="js/kanban.js"></script>
   <script src="js/leads.js"></script>
   <script src="js/tags.js"></script>
+  <script src="js/automations.js"></script>
   <script src="js/funnels.js"></script>
   <script src="js/reports.js"></script>
   <script src="js/tasks.js"></script>
   <script src="js/mentorships.js"></script>
-  <script src="js/marketing.js"></script>
   <script src="js/abordagem.js"></script>
 </head>
 <body>
@@ -332,9 +332,6 @@
     </div>
   </div>
 
-  <!-- ── FUNNELS (mantido para rotas internas: Kanban usa showPage('funnels')) ── -->
-  <div class="page" id="page-funnels" style="display:none"></div>
-
   <!-- ── REPORTS ── -->
   <div class="page" id="page-reports">
     <div class="ph">
@@ -360,14 +357,10 @@
     <div class="pg-scroll" id="estagiario-content"></div>
   </div>
 
-  <!-- ── MENTORIAS (acessível via Configurações) ── -->
+  <!-- ── MENTORIAS ── -->
   <div class="page" id="page-thiago">
     <div class="ph">
       <div class="ph-left">
-        <button class="btn btn-ghost btn-sm" onclick="showPage('configuracoes')" style="margin-bottom:6px;padding-left:0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
-          Configurações
-        </button>
         <h2>⭐ Mentorias</h2>
         <p>Painel de mentorias e carga horária</p>
       </div>
@@ -380,9 +373,6 @@
     </div>
     <div class="pg-scroll" id="thiago-content"></div>
   </div>
-
-  <!-- page-abordagem: redirecionado para aba em Leads -->
-  <div class="page" id="page-abordagem" style="display:none"></div>
 
   <!-- ── USUÁRIOS (acessível via Configurações) ── -->
   <div class="page" id="page-usuarios">
@@ -439,6 +429,26 @@
       </div>
     </div>
     <div class="pg-scroll" id="tags-content"></div>
+  </div>
+
+  <!-- ── AUTOMAÇÕES (acessível via Configurações) ── -->
+  <div class="page" id="page-automacoes">
+    <div class="ph">
+      <div class="ph-left">
+        <button class="btn btn-ghost btn-sm" onclick="showPage('configuracoes')" style="margin-bottom:6px;padding-left:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><polyline points="15 18 9 12 15 6"/></svg>
+          Configurações
+        </button>
+        <h2>⚡ Automações</h2>
+        <p>Regras simples para classificar leads e priorizar ações automaticamente</p>
+      </div>
+      <div class="ph-right">
+        <button class="btn btn-gold" onclick="runAutomations()">
+          Executar agora
+        </button>
+      </div>
+    </div>
+    <div class="pg-scroll" id="automations-content"></div>
   </div>
 
   <!-- ── CONFIGURAÇÕES ── -->

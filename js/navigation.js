@@ -1,4 +1,4 @@
-let _dirtyPages = new Set(['dashboard','kanban','leads-list','funnels-cfg','etiquetas','reports','tarefas','thiago','abordagem','configuracoes','usuarios']);
+let _dirtyPages = new Set(['dashboard','kanban','leads-list','funnels-cfg','etiquetas','automacoes','reports','tarefas','thiago','abordagem','configuracoes','usuarios']);
 
 /* ── Busca Global ── */
 function onGlobalSearch(val){
@@ -32,6 +32,7 @@ function invalidateTaskPages()      { markPagesDirty('dashboard','tarefas'); }
 function invalidateMentorshipPages(){ markPagesDirty('dashboard','thiago'); }
 function invalidateFunnelPages()    { markPagesDirty('dashboard','kanban','funnels-cfg','leads-list'); }
 function invalidateTagPages()       { markPagesDirty('etiquetas','leads-list','kanban','reports'); }
+function invalidateAutomationPages(){ markPagesDirty('automacoes','dashboard','kanban','leads-list','reports'); }
 
 /* ── Abas da página Leads ── */
 let leadsTab = 'lista';
@@ -75,7 +76,7 @@ function showPage(p) {
   // Mapeia página → item de nav ativo
   const navMap = {
     'dashboard':'nav-dashboard','kanban':'nav-kanban','leads-list':'nav-leads',
-    'funnels-cfg':'nav-configuracoes','etiquetas':'nav-configuracoes','reports':'nav-reports','tarefas':'nav-tarefas',
+    'funnels-cfg':'nav-configuracoes','etiquetas':'nav-configuracoes','automacoes':'nav-configuracoes','reports':'nav-reports','tarefas':'nav-tarefas',
     'thiago':'nav-mentorias','configuracoes':'nav-configuracoes','usuarios':'nav-configuracoes'
   };
   const nv = document.getElementById(navMap[p]||'');
@@ -89,6 +90,7 @@ function showPage(p) {
     else if(p==='leads-list') renderLeadsTable();
     else if(p==='funnels-cfg'){ _dirtyPages.add(p); renderFunnels(); }
     else if(p==='etiquetas')  { _dirtyPages.add(p); renderTags(); }
+    else if(p==='automacoes') { _dirtyPages.add(p); renderAutomations(); }
     else if(p==='reports')    renderReports();
     else if(p==='tarefas')    renderEstagiario();
     else if(p==='thiago')     renderThiago();
@@ -163,6 +165,7 @@ function renderConfiguracoes() {
   const hasAdmin = canAccess('usuarios');
   const hasFunnels = canAccess('funnels-cfg');
   const hasTags = canAccess('etiquetas');
+  const hasAutomations = canAccess('automacoes');
 
   el.innerHTML = `
     <div class="config-grid">
@@ -186,6 +189,18 @@ function renderConfiguracoes() {
         </div>
         <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px">
           ${tagsDbReady ? `${tags.length} etiqueta${tags.length!==1?'s':''}` : `${getAllLeadTags().length} tag${getAllLeadTags().length!==1?'s':''} livre${getAllLeadTags().length!==1?'s':''}`}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="margin-left:auto"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>` : ''}
+      ${hasAutomations ? `
+      <div class="config-card" onclick="showPage('automacoes')">
+        <div class="config-card-icon" style="background:rgba(168,85,247,.1)">⚡</div>
+        <div>
+          <div class="config-card-title">Automações</div>
+          <div class="config-card-desc">Aplique regras para follow-up, leads parados, alto potencial e risco operacional.</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px">
+          ${Object.entries(automationSettings).filter(([k,v])=>typeof v==='boolean' && v).length} regra${Object.entries(automationSettings).filter(([k,v])=>typeof v==='boolean' && v).length!==1?'s':''} ativa${Object.entries(automationSettings).filter(([k,v])=>typeof v==='boolean' && v).length!==1?'s':''}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="margin-left:auto"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       </div>` : ''}

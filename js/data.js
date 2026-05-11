@@ -15,6 +15,7 @@ async function loadAll() {
     tasks       = (t.data||[]).map(mapTask);
     mentorships = (m.data||[]).map(mapMentorship);
     estagiarioObs = s.data?.find(x=>x.key==='estagiario_obs')?.value || '';
+    loadAutomationSettings(s.data||[]);
     await loadTagsOptional();
 
     if(funnels.length > 0) activeFunnelId = funnels[0].id;
@@ -93,5 +94,16 @@ async function loadTagsOptional(){
     tags = [];
     tagsDbReady = false;
     console.warn('Tabela tags indisponível; usando etiquetas atuais dos leads até aplicar a migração.', e);
+  }
+}
+
+function loadAutomationSettings(rows){
+  const saved = rows.find(x=>x.key==='automation_settings')?.value;
+  if(!saved) return;
+  try{
+    const parsed = typeof saved === 'string' ? JSON.parse(saved) : saved;
+    automationSettings = {...automationSettings, ...parsed};
+  } catch(e){
+    console.warn('Configurações de automação inválidas; usando padrão.', e);
   }
 }
